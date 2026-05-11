@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OLDПОГОДА :)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background-color: #e0e0e0;
+    font-family: Arial, sans-serif;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; padding: 15px;
+  }
+  .container {
+    background-color: #f5f5f5;
+    border: 2px solid #888888;
+    width: 100%; max-width: 420px;
+    box-shadow: 3px 3px 0px #999999;
+  }
+  .header {
+    background: linear-gradient(180deg, #ffffff 0%, #d0d0d0 100%);
+    border-bottom: 2px solid #888888; padding: 12px 15px;
+  }
+  .header h1 {
+    font-size: 18px; color: #333333; text-align: center; font-weight: bold;
+    text-shadow: 1px 1px 0px #ffffff;
+  }
+  .content { padding: 15px; }
+
+  .city-select {
+    margin-bottom: 12px; background-color: #e8e8e8; border: 1px solid #aaaaaa; padding: 10px;
+  }
+  .city-select label { display: block; font-size: 14px; color: #333333; margin-bottom: 5px; font-weight: bold; }
+  .city-select input {
+    width: 100%; padding: 8px; font-size: 14px; border: 2px inset #999; background: #fff;
+  }
+
+  .btn-update {
+    width: 100%; padding: 12px;
+    background: linear-gradient(180deg, #f0f0f0 0%, #c0c0c0 100%);
+    border: 2px outset #cccccc; font-size: 16px; font-weight: bold; color: #333333;
+    cursor: pointer; margin-top: 5px; text-shadow: 1px 1px 0px #ffffff;
+  }
+  .btn-update:active {
+    border-style: inset;
+    background: linear-gradient(180deg, #c0c0c0 0%, #f0f0f0 100%);
+  }
+
+  .weather-box {
+    background: #ffffff; border: 2px inset #999999; padding: 12px; margin-top: 10px;
+    font-family: "Courier New", monospace; font-size: 14px; color: #000;
+    white-space: pre-wrap; word-break: break-all; min-height: 80px;
+    line-height: 1.6;
+  }
+  .weather-box.loading { color: #888; }
+
+  .date-box {
+    background: #ffffff; border: 2px inset #999999; padding: 8px; margin-top: 8px;
+    font-family: "Courier New", monospace; font-size: 14px; color: #000; text-align: center;
+    font-weight: bold;
+  }
+
+  .disclaimer {
+    font-size: 10px; color: #999; text-align: center; margin-top: 6px;
+  }
+
+  .footer {
+    margin-top: 10px; text-align: center; font-size: 12px; color: #666;
+    border-top: 1px solid #aaa; padding-top: 8px;
+  }
+  .footer a { color: #333; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>:) OLDПОГОДА</h1>
+  </div>
+  <div class="content">
+    <div class="city-select">
+      <label>Город (по-русски):</label>
+      <input type="text" id="cityInput" value="Москва" onfocus="this.select()">
+    </div>
+    <button class="btn-update" onclick="getWeather()">Обновить погоду</button>
+    <div id="weatherContainer">
+      <div class="weather-box loading">
+        Загрузка...
+      </div>
+    </div>
+    <div class="disclaimer">
+      Прогноз может быть неточным, данные с wttr.in
+    </div>
+    <div class="footer">
+      сайт для старых клиентов :)))<br>
+      <a href="https://t.me/lublusebya1111" target="_blank">мой Telegram-канал</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  var monthNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+  function capitalizeCity() {
+    var input = document.getElementById('cityInput');
+    var val = input.value;
+    if (val.length > 0) {
+      var parts = val.split(' ');
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].length > 0) {
+          parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].slice(1).toLowerCase();
+        }
+      }
+      input.value = parts.join(' ');
+    }
+  }
+
+  function getWeather() {
+    capitalizeCity();
+    var city = document.getElementById('cityInput').value.trim();
+    var container = document.getElementById('weatherContainer');
+    if (city === '') {
+      container.innerHTML = '<div class="weather-box">Введите название города!</div>';
+      return;
+    }
+    container.innerHTML = '<div class="weather-box loading">Загрузка...</div>';
+    tryLoadWeather('https://wttr.in/' + encodeURIComponent(city) + '?format=j1&lang=ru', 0);
+  }
+
+  function tryLoadWeather(url, attempt) {
+    var container = document.getElementById('weatherContainer');
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.timeout = 10000;
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          showWeatherData(xhr.responseText);
+        } else if (attempt === 0) {
+          var city = document.getElementById('cityInput').value.trim();
+          tryLoadWeather('http://wttr.in/' + encodeURIComponent(city) + '?format=j1&lang=ru', 1);
+        } else {
+          container.innerHTML = '<div class="weather-box">Город не найден :(</div>';
+        }
+      }
+    };
+    xhr.ontimeout = function() {
+      if (attempt === 0) {
+        var city = document.getElementById('cityInput').value.trim();
+        tryLoadWeather('http://wttr.in/' + encodeURIComponent(city) + '?format=j1&lang=ru', 1);
+      } else {
+        container.innerHTML = '<div class="weather-box">Нет связи :(</div>';
+      }
+    };
+    xhr.onerror = function() {
+      if (attempt === 0) {
+        var city = document.getElementById('cityInput').value.trim();
+        tryLoadWeather('http://wttr.in/' + encodeURIComponent(city) + '?format=j1&lang=ru', 1);
+      } else {
+        container.innerHTML = '<div class="weather-box">Нет связи :(</div>';
+      }
+    };
+    xhr.send(null);
+  }
+
+  function showWeatherData(responseText) {
+    var container = document.getElementById('weatherContainer');
+    try {
+      var data = JSON.parse(responseText);
+      var current = data.current_condition[0];
+      var cityName = (data.nearest_area && data.nearest_area[0] && data.nearest_area[0].areaName && data.nearest_area[0].areaName[0]) 
+                     ? data.nearest_area[0].areaName[0].value : 'Неизвестно';
+      var country = (data.nearest_area && data.nearest_area[0] && data.nearest_area[0].country) 
+                    ? data.nearest_area[0].country[0].value : '';
+
+      var tempReal = current.temp_C || '';
+      var tempFeels = current.FeelsLikeC || '';
+      var desc = (current.lang_ru && current.lang_ru[0]) ? current.lang_ru[0].value : '';
+      var cloud = current.cloudcover || 0;
+      var humidity = current.humidity || '';
+      var pressure = current.pressure || '';
+      var windSpeed = current.windspeedKmph || '';
+      var windDir = current.winddir16Point || '';
+
+      var cloudText = '';
+      if (cloud <= 20) cloudText = 'Ясно';
+      else if (cloud <= 50) cloudText = 'Перем. облачность';
+      else if (cloud <= 80) cloudText = 'Облачно';
+      else cloudText = 'Пасмурно';
+
+      // Дата (просто сегодняшняя по местному времени устройства)
+      var today = new Date();
+      var dateStr = today.getDate() + ' ' + monthNames[today.getMonth()] + ' ' + today.getFullYear();
+
+      var html = '';
+      html += '<div class="date-box">' + dateStr + '</div>';
+      html += '<div class="weather-box">';
+      html += cityName + (country ? ', ' + country : '') + '\n';
+      html += '------------------------\n';
+      html += 'Температура: ' + tempReal + ' C';
+      if (tempFeels && tempFeels !== tempReal) html += ' (ощущ. ' + tempFeels + ' C)';
+      html += '\nНебо: ' + cloudText + ' (' + cloud + '%)';
+      if (desc) html += '\n' + desc;
+      html += '\nВетер: ' + windSpeed + ' км/ч, ' + windDir;
+      html += '\nВлажность: ' + humidity + '%';
+      html += '\nДавление: ' + pressure + ' мбар';
+      html += '</div>';
+
+      container.innerHTML = html;
+    } catch (e) {
+      container.innerHTML = '<div class="weather-box">Ошибка данных :(</div>';
+    }
+  }
+
+  window.onload = function() {
+    getWeather();
+  };
+</script>
+</body>
+</html>
